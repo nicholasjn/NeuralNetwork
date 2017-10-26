@@ -1,61 +1,64 @@
-function backpropagation(p)
+function backpropfinal()
 
-load fisheriris;
-a=meas;
-[rows,kolom]=size(a);
-a(1:50,kolom+1)=1;
-a(51:100,kolom+1)=2;
-a(101:150,kolom+1)=3;
-
-b(1:3:rows,:)=a(1:50,:);
-b(2:3:rows,:)=a(51:100,:);
-b(3:3:rows,:)=a(101:150,:);
-data = b;
-dataRow = floor(0.5 * rows);
-dataTrain=data(1:floor(0.5*rows),:);
-targetTrain = zeros(dataRow,3);
-
-for k=1:dataRow
-    targetTrain(k,dataTrain(k,kolom+1)) = 1;
-end
-%disp(targetTrain);
+% load fisheriris;
+a=xlsread('Data.xlsx',1);
+a2=xlsread('Data.xlsx',2);
+[rows,columns]=size(a);
+[rowsb,columnsb]=size(a2);
+% a(1:50,columns+1)=1;
+% a(51:100,columns+1)=2;
+% a(101:150,columns+1)=3;
+% 
+% b(1:3:rows,:)=a(1:50,:);
+% b(2:3:rows,:)=a(51:100,:);
+% b(3:3:rows,:)=a(101:150,:);
+% %'jumlah kolom data latihan :'
+ dataRow = floor(0.5 * rows);
+ targetRow= floor(0.5 * rowsb);
+% %'jumlah baris data latihan :'
+ dataTrain=a(1:dataRow,:);
+ targetTrain=a2(1:targetRow,:);
+% % targetTrain = zeros(3,dataRows);
+% 
+%  for k=1:dataRow
+%      targetTrain(dataTrain(k,columns+1),k) = 1;
+%  end
 in = dataTrain;
 t = targetTrain;
 epoch = 0;
 stop = false;
-columns = 3;
-%a = 0;
-%n = input
+
+%n = input5
 %p = hidden
 %m = output
 
-%Fungsi Aktivasi
-%f(x) = 1 / 1 + exp(-1 * x)
+l = length(in(:,1));
+n = length(in(1,:));
+m = length(t(1,:));
+q = length(t(:,1));
+p = input('Input jumlah Hidden layer : ');
+% disp(l);
+% disp(n);
+% disp(m);
+% disp(q);
 
-%Turunan Fungsi Aktivasi
-%f'(x) = (fx) * (1 - f(x))
-
-n = length(in(:,1));
-m = length(t(:,1));
-disp(m);
 
 %Inisialisasi variabel dan array/matrix
 v = zeros(n,p);
 vj = zeros(n);
 w = zeros(p,m);
 wj = zeros(m);
-%t = zeros(m,columns);
-E = zeros(m,columns);
-x = zeros(n,columns);
-z = zeros(p,columns);
-y = zeros(m,columns);
-z_in = zeros(p,columns);
-y_in = zeros(m,columns);
+E = zeros(m);
+x = zeros(l,n);
+z = zeros(p);
+y = zeros(m);
+z_in = zeros(p);
+y_in = zeros(m);
 
-min_msse = 0.01;
-max_epoch = rows;
-alfa = 0.5;
-error = zeros(columns);
+min_msse = input('input error rate yang diinginkan : ');
+alfa = input('input alfa : ');
+error = zeros(l);
+msse = 100;
 
 deltaK = zeros(m);
 deltaW = zeros(p,m);
@@ -66,18 +69,12 @@ deltaJ = zeros(p);
 deltaV = zeros(n,p);
 deltaVo = zeros(p);
 
-%Standarisasi input
-for i = 1:n
-    for j = 1:columns
+%Normalisasi input
+for i = 1:l
+    for j = 1:n
         x(i,j) = (2*(in(i,j) - min(in(:,j))) / (max(in(:,j)) - min(in(:,j)))) - 1;
     end
 end
-
-%for k = 1:m
-    %for j = 1:columns
-        %t(k,j) = (2*(out(k,j) - min(out(:,j))) / (max(out(:,j)) - min(out(:,j)))) - 1;
-    %end
-%end
 
 %step 0
 %Inisialisasi bobot dengan metode nguyem widrom
@@ -114,35 +111,35 @@ end
 
 while(stop == false)
     epoch = epoch + 1;
-    for l = 1:columns
+    for q = 1:l
         %Proses feedforward
 
         %Unit hidden
         for j = 1:p
             sum = 0;
             for i = 1:n
-                sum = sum + (x(i,columns)*v(i,j));
+                sum = sum + (x(q,i)*v(i,j));
             end
-            z_in(j,l) = vo + sum;
-            z(j,l) = 1 / (1 + exp(-1*z_in(j,l)));
+            z_in(j) = vo + sum;
+            z(j) = 1 / (1 + exp(-1*z_in(j)));
         end
 
         %Unit output
         for k = 1:m
             sum = 0;
             for j = 1:p
-                sum = sum + (z(j,l)*w(j,k));
+                sum = sum + (z(j)*w(j,k));
             end
-            y_in(k,l) = wo + sum;
-            y(k,l) = 1 / (1 + exp(-1*y_in(k,l)));
+            y_in(k) = wo + sum;
+            y(k) = 1 / (1 + exp(-1*y_in(k)));
         end
 
         %Backpropagation of error
         %Unit output
         for k = 1:m
-            deltaK(k) = (t(k,l) - y(k,l)) * (y(k,l) * (1-y(k,l)));
+            deltaK(k) = (t(k) - y(k)) * (y(k) * (1-y(k)));
             for j = 1:p
-                deltaW(j,k) = alfa * deltaK(k) * z(j,l);
+                deltaW(j,k) = alfa * deltaK(k) * z(j);
             end
             deltaWo(k) = alfa * deltaK(k);
         end
@@ -154,9 +151,9 @@ while(stop == false)
                 sum = sum + (deltaK(k) * w(j,k));
             end
             delta_in(j) = sum;
-            deltaJ(j) = delta_in(j) * (z(j,l) * (1-z(j,l)));
+            deltaJ(j) = delta_in(j) * (z(j) * (1-z(j)));
             for i = 1:n
-                deltaV(i,j) = alfa * deltaJ(j) * x(i,l);
+                deltaV(i,j) = alfa * deltaJ(j) * x(q,i);
             end
             deltaVo(j) = alfa * deltaJ(j);
         end
@@ -176,29 +173,32 @@ while(stop == false)
         %Menghitung total Error
         sum = 0;
         for k = 1:m
-            E(k) = ((t(k,l) - y(k,l)) ^ 2);
-            sum = sum + E(k);
+            E(k) = ((t(k) - y(k)) ^ 2);
+            sum = sum + (0.5 * E(k));
         end
-        error(l) = 0.5 * sum;
+        error(q) = sum;
     end
     sum = 0;
-    for o = 1:columns
-        sum = sum + error(o);
+    for k = 1:l
+        sum = sum + error(k);
     end
-    Esum(epoch) = sum / columns;
+    disp(sum)
+    Esum(epoch) = sum;
     msse = Esum(epoch);
+    %clc
     %fprintf('\nTotal Error : ');
     %disp(msse);
     %fprintf('\nTotal epoch : ');
     %disp(epoch);
 
-    if(msse < min_msse || epoch > max_epoch)
+    if(msse < min_msse)
         stop = true;
-        epoch = epoch - 1;
     end
 end
 finalError = msse;
-disp(epoch)
+fprintf('\nTotal epoch : ');
+disp(epoch);
+ fprintf('\nTotal Error : ');
 disp(finalError);
 figure();
 plot(Esum);
